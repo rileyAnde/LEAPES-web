@@ -1,9 +1,8 @@
-from flask import Flask, request, send_from_directory, jsonify
+from flask import Flask, request, send_from_directory, jsonify, url_for
 from flask_cors import CORS
 import paramiko
 import os
 import zipfile
-
 import shutil
 
 app = Flask(__name__, static_folder='static')
@@ -17,10 +16,13 @@ def scp_folder_from_deepracer(deep_racer_ip, src_folder_path, dest_folder_path, 
         sftp = ssh.open_sftp()
         # Download the entire folder from DeepRacer
         for entry in sftp.listdir_attr(src_folder_path):
-            filename = entry.filename
-            remote_file = os.path.join(src_folder_path, filename)
-            local_file = os.path.join(dest_folder_path, filename)
-            sftp.get(remote_file, local_file)
+            print(entry)
+        remote_file1 = '/home/deepracer/DeepPicar-DeepRacer/dataset/out-key.csv'
+        remote_file2 = '/home/deepracer/DeepPicar-DeepRacer/dataset/out-video.avi'
+        local_file1 = os.path.join(dest_folder_path, "out-key.csv")
+        local_file2 = os.path.join(dest_folder_path, "out-video.avi")
+        sftp.get(remote_file1, local_file1)
+        sftp.get(remote_file2, local_file2)
         sftp.close()
         ssh.close()
     except Exception as e:
@@ -30,7 +32,7 @@ def zip_folder(source_dir, zip_file):
     with zipfile.ZipFile(zip_file, 'w', zipfile.ZIP_DEFLATED) as zf:
         for root, _, files in os.walk(source_dir):
             for file in files:
-                zf.write(os.path.join(root, file), os.path.relpath(os.path.join(root, file), os.path.join(source_dir, '..')))
+                zf.write(os.path.join(root, file), os.path.relpath(os.path.join(root, file), source_dir))
 
 @app.route('/')
 def index():
@@ -40,34 +42,41 @@ def index():
 def download_file():
     deep_racer_ip = request.form['deep_racer_ip']
     source_folder = '/home/deepracer/DeepPicar-DeepRacer/dataset'
-    zip_file = 'dataset.zip'  # Name for the temporary zip file
+    dest_folder = 'downloads/dataset'  # Local folder to store downloaded files
+    zip_file = 'downloads/dataset.zip'  # Path for the temporary zip file
 
     username = 'deepracer'
     password = 'robocar1234'
 
     try:
-        if not os.path.exists('downloads'):
-            os.makedirs('downloads')
+        if not os.path.exists(dest_folder):
+            os.makedirs(dest_folder)
 
         # Download the dataset folder from DeepRacer
-        scp_folder_from_deepracer(deep_racer_ip, source_folder, 'downloads', username, password)
+        print('SCP starting')
+        scp_folder_from_deepracer(deep_racer_ip, source_folder, dest_folder, username, password)
+        print('SCP done')
 
         # Create a zip archive of the downloaded dataset folder
-        zip_folder(os.path.join('downloads', 'dataset'), os.path.join('downloads', zip_file))
+        zip_folder(dest_folder, zip_file)
 
         # Clean up the downloaded dataset folder after zipping
-        shutil.rmtree(os.path.join('downloads', 'dataset'))
+        shutil.rmtree(dest_folder)
 
-        # Generate the download link for the zip file
-        return jsonify({'file_path': f'downloads/{zip_file}'}), 200
+        # Provide the download link for the zip file
+        download_url = url_for('send_downloaded_file', filename='dataset.zip')
+        print(f'Download URL: {download_url}')  # Debug logging
+        return jsonify({'file_path': download_url}), 200
 
     except Exception as e:
         print(f"Error: {str(e)}")
         return str(e), 500
-    
-@app.route('/uploads/<filename>', methods=['GET'])
-def send_uploaded_file(filename):
-    return send_from_directory('uploads', filename)
+
+@app.route('/downloads/<filename>', methods=['GET'])
+def send_downloaded_file(filename):
+    file_path = os.path.join('downloads', filename)
+    print(f'Sending file from path: {file_path}')  # Debug logging
+    return send_from_directory('downloads', filename)
 
 @app.route('/upload_script', methods=['POST'])
 def upload_script():
@@ -131,4 +140,3 @@ if not os.path.exists('downloads'):
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=80)
-

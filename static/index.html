@@ -41,12 +41,16 @@
                 body: new URLSearchParams(formData)
             }).then(response => response.json())
               .then(data => {
-                  const link = document.createElement('a');
-                  link.href = `/${data.file_path}`;
-                  link.download = data.file_path.split('/').pop();
-                  document.body.appendChild(link);
-                  link.click();
-                  document.body.removeChild(link);
+                  if (data.file_path) {
+                      const link = document.createElement('a');
+                      link.href = data.file_path;
+                      link.download = data.file_path.split('/').pop();
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
+                  } else {
+                      alert('Failed to download file. Check server logs for details.');
+                  }
               }).catch(error => {
                   console.error('Error:', error);
                   alert('Failed to download file. Check server logs for details.');
@@ -87,5 +91,3 @@
     </script>
 </body>
 </html>
-
-
