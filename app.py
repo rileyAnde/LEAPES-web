@@ -1,11 +1,13 @@
-from flask import Flask, request, send_from_directory, jsonify, url_for
+from flask import Flask, request, send_from_directory, jsonify, session, url_for
 from flask_cors import CORS
 import paramiko
 import os
 import zipfile
 import shutil
+import uuid  # For generating unique IDs for downloads
 
 app = Flask(__name__, static_folder='static')
+app.secret_key = b'_5#y2L"F4Q8z\n\xec]/'  # Change this to a secure secret key
 CORS(app)
 
 def scp_folder_from_deepracer(deep_racer_ip, src_folder_path, dest_folder_path, username, password):
@@ -42,8 +44,8 @@ def index():
 def download_file():
     deep_racer_ip = request.form['deep_racer_ip']
     source_folder = '/home/deepracer/DeepPicar-DeepRacer/dataset'
-    dest_folder = 'downloads/dataset'  # Local folder to store downloaded files
-    zip_file = 'downloads/dataset.zip'  # Path for the temporary zip file
+    dest_folder = f'downloads/{session["uuid"]}'  # Unique folder for each session
+    zip_file = f'downloads/{session["uuid"]}.zip'  # Unique zip file for each session
 
     username = 'deepracer'
     password = 'robocar1234'
@@ -64,7 +66,7 @@ def download_file():
         shutil.rmtree(dest_folder)
 
         # Provide the download link for the zip file
-        download_url = url_for('send_downloaded_file', filename='dataset.zip')
+        download_url = url_for('send_downloaded_file', filename=f'{session["uuid"]}.zip')
         print(f'Download URL: {download_url}')  # Debug logging
         return jsonify({'file_path': download_url}), 200
 
@@ -132,11 +134,11 @@ def ssh_run_script(deep_racer_ip, command, username, password):
     except Exception as e:
         raise Exception(f"SSH Error: {str(e)}")
 
-if not os.path.exists('uploads'):
-    os.makedirs('uploads')
-
-if not os.path.exists('downloads'):
-    os.makedirs('downloads')
+@app.before_request
+def before_request():
+    if 'uuid' not in session:
+        session['uuid'] = str(uuid.uuid4())
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=80)
+
