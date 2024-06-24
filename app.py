@@ -89,7 +89,10 @@ def upload_script():
     
     username = 'deepracer'
     password = 'robocar1234'
-    dest_file_path = f'/home/deepracer/DeepPicar-DeepRacer/{filename}'
+    dest_file_path = '/home/deepracer/DeepPicar-DeepRacer'
+    if 'tflite' in filename:
+        dest_file_path += '/models'
+    dest_file_path += f'/{filename}'
     
     try:
         scp_file_to_deepracer(deep_racer_ip, os.path.join('uploads', filename), dest_file_path, username, password)

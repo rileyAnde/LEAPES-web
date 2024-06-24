@@ -9,32 +9,42 @@
         <h1>Remote File Manager</h1>
     </header>
     <main>
-        <h2>Download File from AWS DeepRacer</h2>
-        <form id="downloadForm">
-            <label for="deepRacerIp">DeepRacer IP Address:</label>
+        <form id="deepracerIPForm">
+            <label for="deepRacerIp">DeepRacer IP address:</label>
             <input type="text" id="deepRacerIp" name="deep_racer_ip" required>
-            <button type="button" onclick="downloadFile()">Download File</button>
         </form>
 
-        <h2>Upload and Run Python Script on AWS DeepRacer</h2>
-        <form id="uploadForm" enctype="multipart/form-data">
-            <label for="deepRacerIpUpload">DeepRacer IP Address:</label>
-            <input type="text" id="deepRacerIpUpload" name="deep_racer_ip" required>
-            <label for="file">Select Python Script:</label>
-            <input type="file" id="file" name="file" accept=".py" required>
-            <button type="button" onclick="uploadScript()">Upload Script</button>
+        <h2>Download dataset from AWS DeepRacer</h2>
+        <form id="downloadForm">
+            <button type="button" onclick="downloadFile()">Download dataset</button>
         </form>
-        
+
+        <h2>Upload model file to AWS DeepRacer</h2>
+        <form id="uploadModelForm" enctype="multipart/form-data">
+            <label for="file">Select model file (.tflite):</label>
+            <input type="file" id="file" name="file" accept=".tflite" required>
+            <button type="button" onclick="uploadScript('uploadModelForm')">Upload model file</button>
+        </form>
+
+        <h2>Upload and run python script on AWS DeepRacer</h2>
+        <form id="uploadForm" enctype="multipart/form-data">
+            <label for="file">Select Python script (.py):</label>
+            <input type="file" id="file" name="file" accept=".py" required>
+            <button type="button" onclick="uploadScript('uploadForm')">Upload script</button>
+        </form>
+
         <form id="runForm">
-            <label for="scriptName">Script Name:</label>
+            <label for="scriptName">Script name:</label>
             <input type="text" id="scriptName" name="script_name" required>
-            <button type="button" onclick="runScript()">Run Script</button>
+            <button type="button" onclick="runScript()">Run script</button>
         </form>
     </main>
     <script>
         function downloadFile() {
             const form = document.getElementById('downloadForm');
             const formData = new FormData(form);
+            const deepRacerIp = document.getElementById('deepRacerIp').value;
+            formData.append('deep_racer_ip', deepRacerIp);
 
             fetch('/download_file', {
                 method: 'POST',
@@ -57,9 +67,11 @@
               });
         }
 
-        function uploadScript() {
-            const form = document.getElementById('uploadForm');
+        function uploadScript(formId) {
+            const form = document.getElementById(formId);  //'uploadForm');
             const formData = new FormData(form);
+            const deepRacerIp = document.getElementById('deepRacerIp').value;
+            formData.append('deep_racer_ip', deepRacerIp);
 
             fetch('/upload_script', {
                 method: 'POST',
@@ -75,7 +87,7 @@
         function runScript() {
             const form = document.getElementById('runForm');
             const formData = new FormData(form);
-            const deepRacerIp = document.getElementById('deepRacerIpUpload').value;
+            const deepRacerIp = document.getElementById('deepRacerIp').value;
             formData.append('deep_racer_ip', deepRacerIp);
 
             fetch('/run_script', {
