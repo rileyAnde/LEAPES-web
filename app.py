@@ -85,7 +85,7 @@ def upload_script():
     deep_racer_ip = request.form['deep_racer_ip']
     file = request.files['file']
     filename = file.filename
-    file.save(os.path.join('uploads', filename))
+    file.save(os.path.join('uploads', f'{session["uuid"]}'+filename))
     
     username = 'deepracer'
     password = 'robocar1234'
@@ -95,7 +95,7 @@ def upload_script():
     dest_file_path += f'/{filename}'
     
     try:
-        scp_file_to_deepracer(deep_racer_ip, os.path.join('uploads', filename), dest_file_path, username, password)
+        scp_file_to_deepracer(deep_racer_ip, os.path.join('uploads', f'{session["uuid"]}'+filename), dest_file_path, username, password)
         return 'File uploaded and transferred successfully', 200
     except Exception as e:
         return str(e), 500
