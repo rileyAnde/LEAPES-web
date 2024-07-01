@@ -120,7 +120,7 @@ def run_script():
     password = 'robocar1234'
     
     try:
-        output = ssh_run_script(deep_racer_ip, f'python3 /home/deepracer/DeepPicar-DeepRacer/{script_name}', username, password)
+        output = ssh_run_script(deep_racer_ip, f'cd /home/deepracer/DeepPicar-DeepRacer/; sudo python3 /home/deepracer/DeepPicar-DeepRacer/{script_name}', username, password)
         return jsonify({'output': output}), 200
     except Exception as e:
         return str(e), 500
